@@ -6,7 +6,7 @@
 </head>
 <header>
 <div  style="position: absolute;right:0;top:0;background-color:#10e6cd;padding:20px;width:100%;height:90px;align:right;margin-left:0px;">
-<img src='/static/logo.jpg' height="200px" class='center' style="margin-left: 37.5%;height: 150px;margin-top:auto;border-radius: 20%;">
+<img src='/static/logo.jpg' height="200px" class='center' style="margin-left: 37.5%;height: 150px;margin-top:auto;">
 </header>
 <style>
   .textlabel {
@@ -99,17 +99,44 @@
 
 
 
+#qimg{
+        max-width: 100%;
+        max-height: 100%;
+
+    }
+    .box{
+        width: 100%;
+        height: 250px;
+        border-radius: 32px;
+        text-align: center;
+        display: block;
+    }
+
+
+
 </style>
 <body style="background-color:#141414;height='100%';width='100%';margin-top: 100px">
+<script>
+function submitalert() {
+  if (confirm("Are you Sure?")) {
+    document.forms['marksheet'].submit();
+  } else {}
+}
+</script>
+
 <div   style="background-color:#141414;padding:20px;width:screen.width px;height:90px;margin-right: auto;margin-left:auto;display: block;margin-top: 90px">
-    <form action="#" method="POST">
+    <form action="#" method="POST" id="marksheet">
     <input style='display: block;width: 20%;margin-left: 39%;text-align: center;background-color: #10e6cd;color: black;margin-top: 180px' type="text" name="testname" value = "{{ testname }}" readonly class="tnme"><br><br>
     <input style='display: block;width: 20%;margin-left: 39%;text-align: center;background-color: #10e6cd;color: black' type="text"  value = "{{ studname }}" name="studname" readonly class="tnme"><br><br>
+    % print(imgDic)
     % q = 1
     % print(answers[2:])
     % for i in answers[2:]:
     <div id='myDIV'>
-    <textarea disabled id="questionbox">Question : {{ questions[q-1] }}</textarea><br>
+    <textarea disabled id="questionbox">Question : {{ questions[q-1] }}</textarea><br><br><br>
+    % if imgDic[q] != '':
+    <div class='box'><img id='qimg' src={{imgDic[q]}}></div><br><br>
+    %end
     % if options[q-1][0] != '':
     <textarea disabled id='optbox'>(A): {{ options[q-1][0] }}</textarea>
     <textarea disabled id='optbox' >(C): {{ options[q-1][2] }}</textarea><br>
@@ -123,10 +150,10 @@
     </div>
     % q+=1
     % end
-    <div id="myDIV" style="background-color: black">
-    <input class = "textlabel button1" type="submit" value="Submit" style="width: 10%">
-    </div>
     </form>
+    <div id='myDIV'>
+    <button onclick="submitalert()" class = "textlabel button1" style="width: 10%">Submit!</button>
+    <div>
 </div>
 </body>
 </html>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <script src="/static/jquery-3.5.0.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 <title></title>
 </head>
 <header>
@@ -86,30 +86,34 @@ input{
 <br><br>
 
 
-<form action = '#' method = 'POST' id='formm'>
-<input type = 'submit' value = 'Create Test' class="textlabel button1">
+<form action = '#' method = 'POST' id='formm' enctype='multipart/form-data'>
 </form>
 <br>
+<div id='myDIV'>
 <button class="textlabel button1" id='subjective' >Add subjective Q</button>
-<button class="textlabel button1" id='objective' >Add objective Q</button><br><br>
-
-
+<button class="textlabel button1" id='objective' >Add objective Q</button><br><br><br>
+<label class="textlabel" style='background-color:#10e6cd;color:black;display:block'>Click on 'submit' after inputting all the questions:</label><br><br>
+<button class="textlabel button1" id='subform' onclick="sub()" >SUBMIT</button>
+</div><br>
 
 <script>
 var questionNumber=1;
 $(document).ready(function(){
   $("#objective").click(function(){
-    $("#formm").append("<div id='myDIV'><textarea id='textbox' type='text' name='question"+questionNumber.toString()+"' placeholder='Q"+questionNumber.toString()+"' required></textarea><br><br><input type='text' name='question"+questionNumber.toString()+"option1' placeholder='Option1' id='optbox' required>&emsp;<input type='text' name='question"+questionNumber.toString()+"option3' placeholder='Option3' id='optbox' required><br><br><input type='text' name='question"+questionNumber.toString()+"option2' placeholder='Option2' id='optbox' required>&emsp;<input type='text' name='question"+questionNumber.toString()+"option4' placeholder='Option4' id='optbox' required><br><br><input type='number' name='question"+questionNumber.toString()+"mark' placeholder='Marks' style='width:10%;height:30px'><br></div><br>");
+    $("#formm").append("<div id='myDIV'><textarea id='textbox' type='text' name='question"+questionNumber.toString()+"' placeholder='Q"+questionNumber.toString()+"' required></textarea><br><br><label class='textlabel' style='background-color:#10e6cd;color:black' >Add Image:(optional)</label><input type='file' name='image"+questionNumber.toString()+"' accept='image/png, image/jpeg, image/jpg' style='color:#10e6cd'><br><br><input type='text' name='question"+questionNumber.toString()+"option1' placeholder='Option1' id='optbox' required>&emsp;<input type='text' name='question"+questionNumber.toString()+"option3' placeholder='Option3' id='optbox' required><br><br><input type='text' name='question"+questionNumber.toString()+"option2' placeholder='Option2' id='optbox' required>&emsp;<input type='text' name='question"+questionNumber.toString()+"option4' placeholder='Option4' id='optbox' required><br><br><input type='number' name='question"+questionNumber.toString()+"mark' placeholder='Marks' style='width:10%;height:30px'><br></div><br>");
     questionNumber+=1
   });
   $("#subjective").click(function(){
-    $("#formm").append("<div id='myDIV'><textarea id='textbox' type='text' name='question"+questionNumber.toString()+"' placeholder='Q"+questionNumber.toString()+"'required></textarea><br><br><input type='number' name='question"+questionNumber.toString()+"mark' placeholder='Marks' style='width:10%;height:30px' required><br></div><br>");
+    $("#formm").append("<div id='myDIV'><textarea id='textbox' type='text' name='question"+questionNumber.toString()+"' placeholder='Q"+questionNumber.toString()+"'required></textarea><br><br><label class='textlabel' style='background-color:#10e6cd;color:black' >Add Image:(optional)</label><input type='file' name='image"+questionNumber.toString()+"' accept='image/png, image/jpeg, image/jpg' style='color:#10e6cd'><br><br><input type='number' name='question"+questionNumber.toString()+"mark' placeholder='Marks' style='width:10%;height:30px' required><br></div><br>");
     questionNumber+=1
   });
 });
-
+function sub(){
+  if (confirm("Are you Sure Want to Submit? You cannot edit this later. Please carefully check everything!")) {
+    document.forms['formm'].submit();
+  } else {}
+}
 </script>
-
 </body>
 </html>
 

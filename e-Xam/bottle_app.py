@@ -1,4 +1,42 @@
+from mediafire.client import (MediaFireClient, File, Folder)
+import os
+#Upload
+def upload(filename,foldername):
+    imagepath = '/home/xamforhvf/imgdir/'
+    imagepath+=filename+'.jpg'
+    print(imagepath)
+    print(filename)
+    client = MediaFireClient()
+    client.login( email='projectxamforhvf@gmail.com',
+        password='thisisapassword',
+        app_id='42511')
 
+    result = client.upload_file(imagepath, f"mf:/{foldername}/")
+    fileinfo = client.api.file_get_info(result.quickkey)
+
+    hashcode = fileinfo['file_info']['hash']
+    hashcode = hashcode[:4]
+
+    link = fileinfo['file_info']['links']['normal_download']
+    link = link.rstrip('/file')
+    link = link.replace('/file','/convkey/'+hashcode)
+    for i in range(1,len(link)+1):
+        print(link[-i])
+        if link[-i] == '/':
+            point = -i
+            break
+        elif link[-i] == '.':
+            ext = -i
+
+    link = link[:point]+'6g'+link[ext:]
+    return link
+
+def createfolder(foldername):
+    client = MediaFireClient()
+    client.login( email='projectxamforhvf@gmail.com',
+        password='thisisapassword',
+        app_id='42511')
+    client.create_folder('/'+foldername)
 # A very simple Bottle Hello World app for you to get started with...
 from bottle import default_app
 from bottle import route, run, template, request, post, redirect, static_file
@@ -26,7 +64,7 @@ def process():
 		return redirect('/studentpage')
 	elif name == 'Credits':
 	    return redirect('/credits')
-	elif name == 'Info':
+	elif name == 'Help':
 	    return redirect('/info')
 	elif name == 'Contact':
 	    return redirect('/contact')
@@ -88,43 +126,46 @@ def view_result_student():
 
 @route('/studentpage/result/<testname>/<studcode>')
 def display_result(testname,studcode):
-	try:
-		client = gspread.authorize(creds)
-		spreadsheetresult = client.open("resultData")
-		resultsheet = spreadsheetresult.worksheet(testname)
-		spreadsheetanswer = client.open("answerData")
-		answersheet = spreadsheetanswer.worksheet(testname)
-		spreadsheetquestion = client.open("questionData")
-		questionpaper = spreadsheetquestion.worksheet(testname)
-		questions = questionpaper.get_all_values()
-		submissions = answersheet.get_all_values()
-		questiondata = []
-		markdata = []
-		options = []
-		print(questions)
-		for i in questions:
-			questiondata.append(i[2])
-			markdata.append(i[7])
-			options.append(i[3:7])
-		for i in submissions:
-			if i[0] == studcode:
-				answers = i
-				print(answers)
-		if answers[1].lower() == 'true':
-			df = pd.read_excel('/home/xamforhvf/e-Xam/static/studentdata.xls')
-			tempvar = df.loc[df['Student Code'] == int(studcode)]
-			studname = list(tempvar['Student Name'])[0]
-			print(studname)
-		list_of_lists = resultsheet.get_all_values()
-		for j in list_of_lists:
-			if j[1] == studcode:
-				print(j)
-				marks = j[2:-1]
-				total = j[-1]
-				return template('student_result_page',{'answers' : answers,'questions' : questiondata, 'markdata':markdata, 'options':options,'testname':testname,'studname':studname,'marks':marks,'total':total})
-	except:
-		return redirect('/serror404/Invalid Details Submitted Please retry or Your Paper has not been evaluated yet..')
-
+    try:
+        client = gspread.authorize(creds)
+        spreadsheetresult = client.open("resultData")
+        resultsheet = spreadsheetresult.worksheet(testname)
+        spreadsheetanswer = client.open("answerData")
+        answersheet = spreadsheetanswer.worksheet(testname)
+        spreadsheetquestion = client.open("questionData")
+        questionpaper = spreadsheetquestion.worksheet(testname)
+        questions = questionpaper.get_all_values()
+        submissions = answersheet.get_all_values()
+        questiondata = []
+        markdata = []
+        options = []
+        print(questions)
+        for i in questions:
+            questiondata.append(i[2])
+            markdata.append(i[7])
+            options.append(i[3:7])
+        for i in submissions:
+            # print(int(i[0]),int(studcode))
+            if int(i[0]) == int(studcode):
+                answers = i
+                print(answers)
+        if answers[1].lower() == 'true':
+            df = pd.read_excel('/home/xamforhvf/e-Xam/static/studentdata.xls')
+            tempvar = df.loc[df['Student Code'] == int(studcode)]
+            studname = list(tempvar['Student Name'])[0]
+            print(studname)
+        list_of_lists = resultsheet.get_all_values()
+        for j in list_of_lists:
+            # print('checj',j[1],studcode)
+            if int(j[1]) == int(studcode):
+                print(j)
+                marks = j[2:-1]
+                total = j[-1]
+                return template('student_result_page',{'answers' : answers,'questions' : questiondata, 'markdata':markdata, 'options':options,'testname':testname,'studname':studname,'marks':marks,'total':total})
+        else:
+            raise Exception
+    except:
+        return redirect('/serror404/Invalid Details Submitted Please retry or Your Paper has not been evaluated yet..')
 
 @route('/teacherpage')
 def teacherpage():
@@ -154,6 +195,58 @@ def evaloptions():
 		redirect('/uioquiwtqvui4tyuirteuioreguifskdfiodsfsiofiegiofldjklsfioshflskdhfkshfjsdhf')
 	elif option == 'View Result':
 		redirect('/jsfdgiuasbuiybtuibiueytuerhtukihtuiembkhmiuigmjibhruthkwhybgtbiuhetbkehbtih')
+	elif option == 'Preview Test':
+	    redirect('/teacher_preview')
+
+@route('/teacher_preview')
+def preview():
+    return template('teacher_preview')
+
+@post('/teacher_preview')
+def previewname():
+    testname = request.forms.get('testname')
+    return redirect('/previewpage/'+testname)
+
+@route('/previewpage/<testname>')
+def showpreview(testname):
+    spreadsheetquestion = client.open("questionData")
+    timespreadsheet = client.open("timeData")
+    imagespreadsheet = client.open("imageData")
+    timesheet = timespreadsheet.worksheet(testname)
+    imagesheet = imagespreadsheet.worksheet(testname)
+    hour = int(timesheet.acell('A1').value)
+    minute = int(timesheet.acell('B1').value)
+    time = minute*60+hour*60*60
+    print(time)
+    worksheet = spreadsheetquestion.worksheet(testname)
+    questiondata = worksheet.get_all_values()
+    imagespreadsheet = client.open("imageData")
+    imagesheet = imagespreadsheet.worksheet(testname)
+    imageraw = imagesheet.get_all_values()
+    imageDic = {}
+    for imageindex in range(1,len(questiondata)+1):
+        try:
+            imageDic[imageindex] = imageraw[imageindex-1][0]
+        except:
+            imageDic[imageindex] = ''
+
+    questions = {}
+    x = 1
+    print(questiondata)
+    for data in questiondata:
+        if data[1] == 'mcq':
+            questions[x] = {'Q':data[2],'A':data[3],'B':data[4],'C':data[5],'D':data[6],'mark':data[7]}
+            x+=1
+        elif data[1] == 'sub':
+            questions[x] = {'Q':data[2],'mark':data[7]}
+            x+=1
+    print(questions)
+    print(imageDic)
+    return template('test_preview_page',{'questions': questions,'testname':testname,'time':time,'imgDic':imageDic})
+
+@post('/previewpage/<testname>')
+def returntopage(testname):
+    return redirect('/teacherpage/fhgbivqhvtyukqhvtruiqhvuijiquyj1iovyhivgjskghwvejjumauiicjijyiofvjgyiogjiy')
 
 @route('/jsfdgiuasbuiybtuibiueytuerhtukihtuiembkhmiuigmjibhruthkwhybgtbiuhetbkehbtih')
 def teacher_result_auth_page():
@@ -161,12 +254,15 @@ def teacher_result_auth_page():
 
 @post('/jsfdgiuasbuiybtuibiueytuerhtukihtuiembkhmiuigmjibhruthkwhybgtbiuhetbkehbtih')
 def validate_teacher_result_data():
-	testname = request.forms.get('testname')
-	client = gspread.authorize(creds)
-	spreadsheetresult = client.open("resultData")
-	resultsheet = spreadsheetresult.worksheet(testname)
-	list_of_lists = resultsheet.get_all_values()
-	return template('teacher_result_table_page',{'results':list_of_lists})
+    try:
+        testname = request.forms.get('testname')
+        client = gspread.authorize(creds)
+        spreadsheetresult = client.open("resultData")
+        resultsheet = spreadsheetresult.worksheet(testname)
+        list_of_lists = resultsheet.get_all_values()
+        return template('teacher_result_table_page',{'results':list_of_lists})
+    except:
+        return redirect('/terror404/Test Not Found')
 
 
 
@@ -197,70 +293,104 @@ def testcreatepage(testname,hours,minutes):
 
 @post('/iqwueyraskdjfhqoiuryaskjfhpqoutyskjdfhpiuryksajdfhsjfhdlksdfhhsfghfhdfhfgds/create/<testname>/<hours>/<minutes>')
 def upload_to_server(testname,hours,minutes):
-	datalist = []
-	dl = {}
-	global client
-	timespreadsheet = client.open("timeData")
-	timespreadsheet.add_worksheet(title = testname,rows = "1",cols = "2")
-	timesheet = timespreadsheet.worksheet(testname)
-	timesheet.update_acell('A1',hours)
-	timesheet.update_acell('B1',minutes)
-	keylist = list(request.forms.keys())
-	valuelist = list(request.forms.values())
-	keyvalpair = {keylist[i]: valuelist[i] for i in range(len(keylist))}
-	for keys in keylist:
-		if 'option' not in keys and 'mark' not in keys:
-			if keylist.index(keys) != len(keylist)-1 and 'option' in keylist[keylist.index(keys)+1]:
-				dl[keyvalpair[keys]] = []
-			else:
-				dl[keyvalpair[keys]] = ['subjective']
-			datalist.append(keys)
-		else:
-			dl[keyvalpair[datalist[-1]]].append(keyvalpair[keys])
-	questionbank = {}
-	for i in range(1,len(datalist)+1):
-		Q = keyvalpair[datalist[i-1]]
-		if dl[keyvalpair[datalist[i-1]]][0] == 'subjective':
-			mark = dl[keyvalpair[datalist[i-1]]][1]
-			val = {'Q':Q,'mark':mark}
-			questionbank[i] = val
-		else:
-			A = dl[keyvalpair[datalist[i-1]]][0]
-			B = dl[keyvalpair[datalist[i-1]]][1]
-			C = dl[keyvalpair[datalist[i-1]]][2]
-			D = dl[keyvalpair[datalist[i-1]]][3]
-			mark = dl[keyvalpair[datalist[i-1]]][4]
-			questionbank[i] = {'Q':Q,'A':A,'B':B,'C':C,'D':D,'mark':mark}
+    datalist = []
+    dl = {}
+    global client
+    timespreadsheet = client.open("timeData")
+    print('time')
+    timespreadsheet.add_worksheet(title = testname,rows = "1",cols = "2")
+    timesheet = timespreadsheet.worksheet(testname)
+    timesheet.update_acell('A1',hours)
+    timesheet.update_acell('B1',minutes)
+    keylist = list(request.forms.keys())
+    valuelist = list(request.forms.values())
+    keyvalpair = {keylist[i]: valuelist[i] for i in range(len(keylist))}
+    print('imgloading')
+    rli = []
+    for j in keylist:
+        if 'image' in j:
+            rli.append(keylist.index(j))
+    for h in rli[::-1]:
+        keylist.pop(h)
+        valuelist.pop(h)
+    print(rli)
+    print(keylist,valuelist)
+    for keys in keylist:
+        print(keys)
+        if 'option' not in keys and 'mark' not in keys:
+            print('questions')
+            if keylist.index(keys) != len(keylist)-1 and 'option' in keylist[keylist.index(keys)+1]:
+                dl[keyvalpair[keys]] = []
+            else:
+                dl[keyvalpair[keys]] = ['subjective']
+            datalist.append(keys)
+        else:
+            dl[keyvalpair[datalist[-1]]].append(keyvalpair[keys])
+    questionbank = {}
+    for i in range(1,len(datalist)+1):
+        Q = keyvalpair[datalist[i-1]]
+        if dl[keyvalpair[datalist[i-1]]][0] == 'subjective':
+            mark = dl[keyvalpair[datalist[i-1]]][1]
+            val = {'Q':Q,'mark':mark}
+            questionbank[i] = val
+        else:
+            A = dl[keyvalpair[datalist[i-1]]][0]
+            B = dl[keyvalpair[datalist[i-1]]][1]
+            C = dl[keyvalpair[datalist[i-1]]][2]
+            D = dl[keyvalpair[datalist[i-1]]][3]
+            mark = dl[keyvalpair[datalist[i-1]]][4]
+            questionbank[i] = {'Q':Q,'A':A,'B':B,'C':C,'D':D,'mark':mark}
+    client = gspread.authorize(creds)
+    spreadsheetimage = client.open("imageData")
+    imageworksheet = spreadsheetimage.add_worksheet(title=testname, rows="100", cols="2")
+    imageslist = []
+    imagedataretrived = request.files
+    createfolder(testname)
+    for i in imagedataretrived.keys():
+        print(i)
+        # try:
+        for retries in range(20):
+            imagedataretrived[i].save(f'/home/xamforhvf/imgdir/{i}.jpg',overwrite = True)
+            print(i,imagedataretrived[i])
+            print('try:',retries)
+            try:
+                link = upload(i,testname)
+                break
+            except:
+                print('except')
+        os.remove(f'/home/xamforhvf/imgdir/{i}.jpg')
+        # return redirect('/terror404/Test Creation Failed Due to a network issue please create a test with different name or Unsupoorted file format Only jpg and jpeg are supported')
+        print(link)
+        imageworksheet.update_acell(f'A{i[-1]}',link)
 
-	client = gspread.authorize(creds)
+    spreadsheetquestion = client.open("questionData")
+    spreadsheetanswer = client.open("answerData")
+    spreadsheetresult = client.open("resultData")
 
-	spreadsheetquestion = client.open("questionData")
-	spreadsheetanswer = client.open("answerData")
-	spreadsheetresult = client.open("resultData")
-
-	answerworksheet = spreadsheetanswer.add_worksheet(title=testname, rows="100", cols="100")
-# 	questionworksheet = spreadsheetquestion.add_worksheet(title =testname, rows='100',cols = '100')
-	spreadsheetresult.add_worksheet(title =testname, rows='100',cols = '100')
-	for i in questionbank:
-		if len(questionbank[i])>3:
-			cell_list = questionworksheet.range(f'A{i}:H{i}')
-			questionvals = list(questionbank[i].values())
-			questionvals.insert(0,i)
-			questionvals.insert(1,'mcq')
-			dat = 0
-			for cell in cell_list:
-				cell.value = questionvals[dat]
-				dat+=1
-			questionworksheet.update_cells(cell_list)
-		else:
-			cell_list = questionworksheet.range(f'A{i}:H{i}')
-			questionvals = [i,'sub',questionbank[i]['Q'],'','','','',questionbank[i]['mark']]
-			dat = 0
-			for cell in cell_list:
-				cell.value = questionvals[dat]
-				dat+=1
-			questionworksheet.update_cells(cell_list)
-	return redirect('/terror404/Test Created Successfully')
+    answerworksheet = spreadsheetanswer.add_worksheet(title=testname, rows="100", cols="100")
+    questionworksheet = spreadsheetquestion.worksheet(testname)
+    spreadsheetresult.add_worksheet(title =testname, rows='100',cols = '100')
+    for i in questionbank:
+        if len(questionbank[i])>3:
+            cell_list = questionworksheet.range(f'A{i}:H{i}')
+            questionvals = list(questionbank[i].values())
+            questionvals.insert(0,i)
+            questionvals.insert(1,'mcq')
+            dat = 0
+            for cell in cell_list:
+                cell.value = questionvals[dat]
+                dat+=1
+            questionworksheet.update_cells(cell_list)
+        else:
+            cell_list = questionworksheet.range(f'A{i}:H{i}')
+            questionvals = [i,'sub',questionbank[i]['Q'],'','','','',questionbank[i]['mark']]
+            dat = 0
+            for cell in cell_list:
+                cell.value = questionvals[dat]
+                dat+=1
+            questionworksheet.update_cells(cell_list)
+    print('Done')
+    return redirect('/terror404/Test Created Successfully')
 
 @route('/write')
 def writepage():
@@ -298,16 +428,30 @@ def testpage(testname,studcode):
 	print(testname)
 	spreadsheetquestion = client.open("questionData")
 	timespreadsheet = client.open("timeData")
+	imagespreadsheet = client.open("imageData")
 	timesheet = timespreadsheet.worksheet(testname)
+	imagesheet = imagespreadsheet.worksheet(testname)
 	hour = int(timesheet.acell('A1').value)
 	minute = int(timesheet.acell('B1').value)
 	time = minute*60+hour*60*60
 	print(time)
 	# try:
+
 	worksheet = spreadsheetquestion.worksheet(testname)
 	questiondata = worksheet.get_all_values()
+	imagespreadsheet = client.open("imageData")
+	imagesheet = imagespreadsheet.worksheet(testname)
+	imageraw = imagesheet.get_all_values()
+	imageDic = {}
+	for imageindex in range(1,len(questiondata)+1):
+		try:
+			imageDic[imageindex] = imageraw[imageindex-1][0]
+		except:
+			imageDic[imageindex] = ''
+
 	questions = {}
 	x = 1
+	print(questiondata)
 	for data in questiondata:
 		if data[1] == 'mcq':
 			questions[x] = {'Q':data[2],'A':data[3],'B':data[4],'C':data[5],'D':data[6],'mark':data[7]}
@@ -315,7 +459,9 @@ def testpage(testname,studcode):
 		elif data[1] == 'sub':
 			questions[x] = {'Q':data[2],'mark':data[7]}
 			x+=1
-	return template('test_writing_page',{'questions': questions,'testname':testname,'time':time})
+	print(questions)
+	print(imageDic)
+	return template('test_writing_page',{'questions': questions,'testname':testname,'time':time,'imgDic':imageDic})
 
 @post('/write/<testname>/<studcode>')
 def processtest(testname,studcode):
@@ -370,12 +516,14 @@ def seesubmissions():
 
 @route('/asdfasdfasgafgdghfdghfhfghfdghfdghfdghfdghaghadfhhfhahfddhdfhafhsd/<testname>')
 def availsheets(testname):
-	client = gspread.authorize(creds)
-	spreadsheetanswer = client.open("answerData")
-	answersheet = spreadsheetanswer.worksheet(testname)
-	submissions = answersheet.get_all_values()
-	return template('available_answersheets',{'submissions': submissions})
-
+    try:
+        client = gspread.authorize(creds)
+        spreadsheetanswer = client.open("answerData")
+        answersheet = spreadsheetanswer.worksheet(testname)
+        submissions = answersheet.get_all_values()
+        return template('available_answersheets',{'submissions': submissions})
+    except:
+        return redirect('/terror404/Test Not Found')
 
 @post('/asdfasdfasgafgdghfdghfhfghfdghfdghfdghfdghaghadfhhfhahfddhdfhafhsd/<testname>')
 def clickname(testname):
@@ -396,6 +544,17 @@ def displaysheet(studcode,testname):
 	questiondata = []
 	markdata = []
 	options = []
+	imagespreadsheet = client.open("imageData")
+	imagesheet = imagespreadsheet.worksheet(testname)
+	imageraw = imagesheet.get_all_values()
+	print(imageraw)
+	imageDic = {}
+	for imageindex in range(1,len(questions)+1):
+		try:
+			imageDic[imageindex] = imageraw[imageindex-1][0]
+		except:
+			imageDic[imageindex] = ''
+	print(imageDic)
 	print(questions)
 	for i in questions:
 		questiondata.append(i[2])
@@ -405,12 +564,14 @@ def displaysheet(studcode,testname):
 		if i[0] == studcode:
 			answers = i
 			print(i)
+
 	if answers[1].lower() == 'false':
 		df = pd.read_excel('/home/xamforhvf/e-Xam/static/studentdata.xls')
 		tempvar = df.loc[df['Student Code'] == int(studcode)]
 		studname = list(tempvar['Student Name'])[0]
 		print(studname)
-		return template('sheet_evaluation_page',{'answers' : answers,'questions' : questiondata, 'markdata':markdata, 'options':options,'testname':testname,'studname':studname})
+		print(options)
+		return template('sheet_evaluation_page',{'answers' : answers,'questions' : questiondata, 'markdata':markdata, 'options':options,'testname':testname,'studname':studname,'imgDic':imageDic})
 	else:
 		return redirect('/asdfasdfasgafgdghfdghfhfghfdghfdghfdghfdghaghadfhhfhahfddhdfhafhsd/'+testname)
 
@@ -443,4 +604,7 @@ def saveresult(testname,studcode):
 	return redirect('/asdfasdfasgafgdghfdghfhfghfdghfdghfdghfdghaghadfhhfhahfddhdfhafhsd/'+testname)
 
 application = default_app()
+
+# if __name__ == '__main__':
+	# run(reloader = True,debug = True)
 
